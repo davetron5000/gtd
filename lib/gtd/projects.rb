@@ -9,7 +9,8 @@ module Gtd
     include FileUtils
 
 
-    def initialize(project_dir)
+    def initialize(todo_txt, project_dir)
+      @todo_txt    = todo_txt
       @project_dir = Pathname(project_dir)
       @archive_dir = @project_dir / "__archive__"
 
@@ -18,7 +19,8 @@ module Gtd
       }.reject { |dir|
         dir == @archive_dir
       }.each_with_index.map { |dir,index|
-        Project.new(index+1,dir)
+        project_code = dir.basename
+        Project.new(index+1,dir,@todo_txt.search(project: project_code).to_a)
       }
     end
 

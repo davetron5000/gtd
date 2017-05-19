@@ -34,21 +34,13 @@ command :ls do |c|
   end
 end
 
-command :lsp do |c|
-  c.action do |global,options,args|
-    $todo_list.projects.each do |p|
-      puts p
-    end
-  end
-end
-
 desc "Manage Projects"
 command :projects do |c|
   c.desc "List projects"
   c.command :ls do |ls|
     ls.action do |global,options,args|
-      $projects.each do |_|
-        puts "[#{_.id}] #{_.name}"
+      $projects.each do |project|
+        puts project.to_s
       end
     end
   end
@@ -93,7 +85,7 @@ end
 pre do |global,command,options,args|
   Rainbow.enabled = global[:color]
   $todo_list = Gtd::TodoTxt.new(Pathname(global[:root]) / "todo.txt")
-  $projects = Gtd::Projects.new(Pathname(global[:root]) / "projects")
+  $projects = Gtd::Projects.new($todo_list,Pathname(global[:root]) / "projects")
   true
 end
 

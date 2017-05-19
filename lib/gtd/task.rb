@@ -1,6 +1,7 @@
 require "rainbow"
 module Gtd
   class Task
+    attr_reader :task
     def initialize(id,line)
       @id       = id
       @line     = line
@@ -19,7 +20,7 @@ module Gtd
     end
 
     def to_s
-      "[#{@id}]: " + @task + " " + Rainbow(@contexts.join(" ")).yellow + " " + Rainbow(@projects.join(" ")).cyan
+      Rainbow("[#{@id}]: ").faint + @task + " " + Rainbow(@contexts.join(" ")).yellow + " " + Rainbow(@projects.join(" ")).cyan
     end
 
     def in_context?(context)
@@ -30,7 +31,7 @@ module Gtd
 
     def in_project?(project)
       return true if project.nil?
-      project = "+#{project}" if project !~ /^\+/
+      project = "+#{project}" if project.to_s !~ /^\+/
       @projects.include?(project)
     end
   end

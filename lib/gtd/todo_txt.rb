@@ -19,7 +19,11 @@ module Gtd
       @tasks.each(&block)
     end
 
-    def search(context: , project:, &block)
+    def next
+      self.first
+    end
+
+    def search(context: nil, project: nil, &block)
       @tasks.select { |task|
         task.in_context?(context)
       }.select { |task|
