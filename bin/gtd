@@ -26,21 +26,48 @@ command :ls do |c|
   c.desc "Show only tasks for the given project"
   c.flag [:project,:"+"]
 
+  c.desc "Show only completed tasks"
+  c.switch [:completed]
 
   c.action do |global,options,args|
-    $todo_list.search(context: options[:context], project: options[:project]) do |task|
-      puts task
+    $todo_list.search(context: options[:context], project: options[:project], completed: options[:completed]) do |task|
+      puts Gtd::Formatters::Task.new(task).to_s
     end
+  end
+end
+
+desc "Edit the task list directly in your configured $EDITOR"
+command [:edit,:vi] do |c|
+  c.action do |global,options,args|
+    editor = ENV["EDITOR"]
+    system("#{editor} '#{$todo_list.file}'")
+  end
+end
+
+desc "Mark a task complete"
+arg :task_id
+command [:done,:complete] do |c|
+  c.action do |global,options,args|
+    result = Gtd::TaskCompleter.new($todo_list,$projects).complete_task(args[0].to_i)
+    puts result.to_s
   end
 end
 
 desc "Manage Projects"
 command :projects do |c|
-  c.desc "List projects"
+  c.desc "List active projects"
   c.command :ls do |ls|
+
+    ls.desc "Show next action on each project"
+    ls.switch "next-actions", default_value: true
+
     ls.action do |global,options,args|
       $projects.each do |project|
-        puts project.to_s
+        if options["next-actions"]
+          puts Gtd::Formatters::ProjectSummary.new(project).to_s
+        else
+          puts Gtd::Formatters::ProjectCompactSummary.new(project).to_s
+        end
       end
     end
   end
@@ -49,11 +76,7 @@ command :projects do |c|
   c.arg :project_id
   c.command :archive do |archive|
     archive.action do |global,options,args|
-      project = $projects.detect { |_| _.id == args[0].to_i }
-      if project.nil?
-        exit_now!("No project with id #{args[0]}")
-      end
-      $projects.archive(project)
+      $projects.archive(args[0])
     end
   end
 
@@ -68,15 +91,38 @@ command :projects do |c|
   end
 
   c.desc "Show Project info"
+  c.arg :project_id
   c.command :show do |show|
     show.action do |global,options,args|
+      puts Gtd::Formatters::ProjectDetails.new($projects.find(args[0])).to_s
     end
   end
 
-  c.desc "Show Project tasks"
+  c.desc "Manage Project tasks"
   c.command :tasks do |tasks|
-    tasks.action do |global,options,args|
+    tasks.desc "List Project tasks"
+    tasks.arg :project_id
+    tasks.command :ls do |ls|
+      ls.action do |global,options,args|
+        $projects.find(args[0]).tasks.each do |task|
+          puts Gtd::Formatters::Task.new(task, show_id: false).to_s
+        end
+      end
     end
+
+    tasks.desc "Add a new task for this project"
+    tasks.arg_name "project_id new_task_name"
+    tasks.command :new do |add|
+      add.action do |global,options,args|
+        project_id = args[0]
+        task_name  = args[1..-1].join(" ")
+        project = $projects.find(project_id)
+        project.add_task(task_name)
+        project.save!
+      end
+    end
+
+    tasks.default_command :ls
   end
 
   c.default_command :ls

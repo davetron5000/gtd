@@ -24,7 +24,20 @@ module Gtd
       }
     end
 
-    def archive(project)
+    def find(id)
+      $projects.detect { |_| _.id == id.to_i }.tap { |project|
+        exit_now!("No project with id #{id}") if project.nil?
+      }
+    end
+
+    def find_by_code(project_code)
+      @projects.detect { |project|
+        project.code == project_code
+      }
+    end
+
+    def archive(project_id)
+      project = self.find(project_id)
       mkdir_p @archive_dir, verbose: true
       mv project.dir,@archive_dir, verbose: true
     end
