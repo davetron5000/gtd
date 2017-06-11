@@ -7,18 +7,17 @@ module Gtd
       @id        = id
       @line      = line
       @completed = completed
-      @contexts  = line.split(/\s/).select { |word| word =~ /^@/ }
-      @projects  = line.split(/\s/).select { |word| word =~ /^\+/ }
+      raw_contexts  = line.split(/\s/).select { |word| word =~ /^@/ }
+      raw_projects  = line.split(/\s/).select { |word| word =~ /^\+/ }
 
       @task = line.split(/\s/).reject { |word|
-        @contexts.include?(word)
+        raw_contexts.include?(word)
       }.reject { |word|
-        @projects.include?(word)
+        raw_projects.include?(word)
       }.join(" ")
-    end
 
-    def projects
-      @projects.map { |_| _.gsub(/^\+/,'') }
+      @contexts = raw_contexts.map { |_| _.gsub(/^@/,'') }.uniq
+      @projects = raw_projects.map { |_| _.gsub(/^\+/,'') }.uniq
     end
 
     def completed?
@@ -39,13 +38,13 @@ module Gtd
 
     def in_context?(context)
       return true if context.nil?
-      context = "@#{context}" if context !~ /^@/
+      context = context.gsub(/^@/,'')
       @contexts.include?(context)
     end
 
     def in_project?(project)
       return true if project.nil?
-      project = "+#{project}" if project.to_s !~ /^\+/
+      project = project.to_s.gsub(/^\+/,'')
       @projects.include?(project)
     end
   end

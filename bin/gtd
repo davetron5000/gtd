@@ -19,6 +19,7 @@ desc "Use colored output"
 switch :color, default_value: true
 
 desc "List tasks"
+arg :search_string, :optional
 command :ls do |c|
   c.desc "Show only tasks in the given context"
   c.flag [:context,:"@"]
@@ -27,12 +28,26 @@ command :ls do |c|
   c.flag [:project,:"+"]
 
   c.desc "Show only completed tasks"
-  c.switch [:completed]
+  c.switch [:completed,:done]
 
   c.action do |global,options,args|
-    $todo_list.search(context: options[:context], project: options[:project], completed: options[:completed]) do |task|
+    $todo_list.search(context: options[:context],
+                      project: options[:project],
+                      completed: options[:completed],
+                      match: args[0]
+                     ) do |task|
       puts Gtd::Formatters::Task.new(task).to_s
     end
+  end
+end
+
+desc "Add a new task"
+arg_name "task description"
+command [:new] do |c|
+  c.action do |global,options,args|
+    task_name  = args.join(" ")
+    $todo_list.add_task(task_name)
+    $todo_list.save!
   end
 end
 
@@ -49,12 +64,12 @@ arg :task_id
 command [:done,:complete] do |c|
   c.action do |global,options,args|
     result = Gtd::TaskCompleter.new($todo_list,$projects).complete_task(args[0].to_i)
-    puts result.to_s
+    puts result.to_s unless result.to_s.strip == ""
   end
 end
 
 desc "Manage Projects"
-command :projects do |c|
+command [:projects,:p] do |c|
   c.desc "List active projects"
   c.command :ls do |ls|
 
@@ -98,6 +113,16 @@ command :projects do |c|
     end
   end
 
+  c.desc "Edit Project info directly"
+  c.arg :project_id
+  c.command :vi do |show|
+    show.action do |global,options,args|
+      editor = ENV["EDITOR"]
+      project = $projects.find(args[0])
+      system("#{editor} '#{project.dir}'")
+    end
+  end
+
   c.desc "Manage Project tasks"
   c.command :tasks do |tasks|
     tasks.desc "List Project tasks"
@@ -123,6 +148,24 @@ command :projects do |c|
     end
 
     tasks.default_command :ls
+  end
+
+  c.desc "Manage Project links"
+  c.command :links do |links|
+    links.desc "Add a new link for this project"
+    links.arg_name "project_id link"
+    links.command :new do |add|
+      add.action do |global,options,args|
+        project_id = args[0]
+        project = $projects.find(project_id)
+        args[1..-1].each do |link|
+          project.links << link
+        end
+        project.save!
+      end
+    end
+
+    links.default_command :ls
   end
 
   c.default_command :ls

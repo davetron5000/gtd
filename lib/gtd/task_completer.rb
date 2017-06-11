@@ -13,7 +13,7 @@ module Gtd
       end
 
       def to_s
-        "'#{project_code}' isn't a tracked project, no next action"
+        "'#{@project_code}' isn't a tracked project, no next action"
       end
     end
 
@@ -28,6 +28,19 @@ module Gtd
     end
 
     class TaskNotPartOfAProject
+      def to_s
+        ""
+      end
+    end
+
+    class NoNextTask
+      def initialize(project_code)
+        @project_code = project_code
+      end
+
+      def to_s
+        "#{@project_code} has no next action.  Time to archive it?"
+      end
     end
 
     def complete_task(task_id)
@@ -38,10 +51,15 @@ module Gtd
         if project.nil?
           return NoSuchProject.new(project_code)
         end
+        project.remove_task(task)
         next_action = project.next_action
-        @todo_list.add_task(next_action)
-        @todo_list.save!
-        NextTaskAddedToTodoList.new(next_action)
+        if next_action.nil?
+          NoNextTask.new(project_code)
+        else
+          @todo_list.add_task(next_action)
+          @todo_list.save!
+          NextTaskAddedToTodoList.new(next_action)
+        end
       else
         TaskNotPartOfAProject.new
       end

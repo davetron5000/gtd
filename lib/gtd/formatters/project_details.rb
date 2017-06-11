@@ -10,16 +10,13 @@ class Gtd::Formatters::ProjectDetails
     @project = project
   end
   def to_s
-    next_action = if @project.next_action.nil?
-                    Rainbow("⛔️  No Next Action").red
-                  else
-                    Rainbow("👉  #{@project.next_action.task}").green
-                  end
     io = StringIO.new
     io.puts
     io.puts Rainbow(@project.name).bright
     io.puts
-    io.puts next_action
+    if @project.next_action.nil?
+      io.puts Rainbow("⛔️  No Next Action").red
+    end
     if @project.links.any?
       io.puts
       io.puts Rainbow("⛓  Links").cyan.bold
@@ -33,6 +30,18 @@ class Gtd::Formatters::ProjectDetails
       io.puts Rainbow("📋  Notes").yellow.bold
       io.puts
       io.puts @project.notes
+    end
+    if @project.tasks.any?
+      io.puts
+      io.puts Rainbow("☑️  Tasks").green.bold
+      io.puts
+      @project.tasks.each do |task|
+        if task.task == @project.next_action.task
+          io.puts "👉  " + Rainbow(task.task).bright
+        else
+          io.puts "*  " + Rainbow(task.task).bright
+        end
+      end
     end
     io.string
   end

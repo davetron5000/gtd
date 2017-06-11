@@ -15,6 +15,6 @@ class Gtd::Formatters::Task
                 else
                   ""
                 end
-    id_string + @task.task + " " + Rainbow(@task.contexts.join(" ")).yellow + " " + Rainbow(@task.projects.map {|_| "+#{_}" }.join(" ")).cyan + Rainbow("#{@task.completed? ? ' (Completed)' : ''}").green.italic
+    id_string + @task.task + " " + Rainbow(@task.contexts.map { |_| "@#{_}" }.join(" ")).yellow + " " + Rainbow(@task.projects.map {|_| "+#{_}" }.join(" ")).cyan + Rainbow("#{@task.completed? ? ' (Completed)' : ''}").green.italic
   end
 end

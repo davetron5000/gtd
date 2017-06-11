@@ -29,7 +29,7 @@ module Gtd
       self.first
     end
 
-    def search(context: nil, project: nil, completed: false, &block)
+    def search(context: nil, project: nil, completed: false, match: nil, &block)
       @tasks.select { |task|
         task.in_context?(context)
       }.select { |task|
@@ -39,6 +39,12 @@ module Gtd
           task.completed?
         else
           !task.completed?
+        end
+      }.select { |task|
+        if match.nil?
+          true
+        else
+          !!Regexp.new(match,true).match(task.task)
         end
       }.each(&block)
     end
@@ -68,7 +74,7 @@ module Gtd
           @tasks << Task.new(next_id,task_or_task_name.serialize,false)
         end
       else
-        @tasks << Task.new(next_id,task_name,false)
+        @tasks << Task.new(next_id,task_or_task_name,false)
       end
     end
 
