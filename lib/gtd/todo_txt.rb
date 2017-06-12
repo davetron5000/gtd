@@ -15,8 +15,11 @@ module Gtd
                                   else
                                     [false,line.chomp]
                                   end
-          description = description + " +#{force_project}" if force_project
-          @tasks << Task.new(index+1,description,completed)
+          task = Task.new(index+1,description,completed)
+          if force_project && !task.projects.include?(force_project)
+            task.projects << force_project
+          end
+          @tasks << task
         end
       end
     end
@@ -67,14 +70,16 @@ module Gtd
 
     def add_task(task_or_task_name)
       next_id = @tasks.map(&:id).max || 1
-      if task_or_task_name.kind_of?(Task)
-        if @tasks.map(&:task).include?(task_or_task_name.task)
-          # no-op, task already there
-        else
-          @tasks << Task.new(next_id,task_or_task_name.serialize,false)
-        end
+      task_description = if task_or_task_name.kind_of?(Task)
+                           task_or_task_name.serialize
+                         else
+                           task_or_task_name
+                         end
+      new_task = Task.new(next_id,task_description,false)
+      if @tasks.map(&:task).include?(new_task.task)
+        # no-op, task already there
       else
-        @tasks << Task.new(next_id,task_or_task_name,false)
+        @tasks << new_task
       end
     end
 
