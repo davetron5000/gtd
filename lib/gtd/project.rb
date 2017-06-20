@@ -49,8 +49,9 @@ module Gtd
     end
 
     def remove_task(task)
-      @next_actions = @next_actions.reject { |next_action|
-        task.task == next_action.task
+      @next_actions.remove_task(task)
+      @global_tasks = @global_tasks.reject { |global_task|
+        task.task == global_task.task
       }
     end
 

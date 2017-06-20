@@ -120,6 +120,22 @@ RSpec.describe Gtd::Project do
       expect(project.tasks[1]).not_to be_task("Finally, do this")
       expect(project.tasks[2]).not_to be_task("Finally, do this")
     end
+    it "removes the task from the global task list" do
+      global_tasks = [
+        Gtd::Task.new(1,"Do this",false),
+        Gtd::Task.new(2,"Then do that",false),
+      ]
+      File.open(File.join(dir,"tasks.txt"),"w") do |file|
+        file.puts "Also don't forget this"
+        file.puts "Finally, do this"
+      end
+      project = described_class.new(id,dir,global_tasks)
+      project.remove_task(Gtd::Task.new(1,"Do this",false))
+      expect(project.tasks.size).to eq(3)
+      expect(project.tasks[0]).not_to be_task("Do this")
+      expect(project.tasks[1]).not_to be_task("Do this")
+      expect(project.tasks[2]).not_to be_task("Do this")
+    end
   end
   describe "#add_task" do
     it "creates a task and adds it to the end of the next_actions list" do

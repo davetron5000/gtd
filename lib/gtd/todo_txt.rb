@@ -52,6 +52,12 @@ module Gtd
       }.each(&block)
     end
 
+    def remove_task(task)
+      @tasks = @tasks.reject { |this_task|
+        task.task == this_task.task
+      }
+    end
+
     def projects
       @tasks.map(&:projects).flatten.uniq.sort
     end
