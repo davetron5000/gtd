@@ -1,0 +1,1 @@
+GLI_DEBUG=true bundle exec bin/gtd $*

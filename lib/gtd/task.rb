@@ -1,51 +1,21 @@
-require "rainbow"
+require "date"
 
 module Gtd
   class Task
-    attr_reader :id, :task, :contexts, :projects
-    def initialize(id,line,completed)
-      @id        = id
-      @line      = line
-      @completed = completed
-      raw_contexts  = line.split(/\s/).select { |word| word =~ /^@/ }
-      raw_projects  = line.split(/\s/).select { |word| word =~ /^\+/ }
-
-      @task = line.split(/\s/).reject { |word|
-        raw_contexts.include?(word)
-      }.reject { |word|
-        raw_projects.include?(word)
-      }.join(" ")
-
-      @contexts = raw_contexts.map { |_| _.gsub(/^@/,'') }.uniq
-      @projects = raw_projects.map { |_| _.gsub(/^\+/,'') }.uniq
-    end
-
-    def completed?
-      @completed
+    attr_reader :description, :completed_on, :id, :contexts
+    def initialize(description:, id: nil, completed_on: nil, contexts: [])
+      @description  = description
+      @id           = id
+      @completed_on = completed_on
+      @contexts     = contexts
     end
 
     def complete!
-      @completed = true
+      @completed_on = Date.today
     end
 
-    def serialize
-      if @completed
-        "x #{@line}"
-      else
-        @line
-      end
-    end
-
-    def in_context?(context)
-      return true if context.nil?
-      context = context.gsub(/^@/,'')
-      @contexts.include?(context)
-    end
-
-    def in_project?(project)
-      return true if project.nil?
-      project = project.to_s.gsub(/^\+/,'')
-      @projects.include?(project)
+    def completed?
+      !@completed_on.nil?
     end
   end
 end

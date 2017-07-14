@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
-require 'gli'
-require 'gtd'
-require 'pathname'
+require "gli"
+require "gtd"
+require "pathname"
+require "rainbow"
 
 include GLI::App
 
-program_desc 'Describe your application here'
+program_desc "Manage a basic todo list and project list, GTD-style"
 
 version Gtd::VERSION
 
@@ -18,36 +19,61 @@ flag :root, default_value: Pathname(ENV["HOME"]) / "Dropbox" / "GTD"
 desc "Use colored output"
 switch :color, default_value: true
 
+desc "Create a new fresh todo list"
+command :init do |c|
+  c.action do |global,options,args|
+    if $todo_txt.tasks.empty?
+      $todo_txt.tasks << Gtd::Task.new(description: "Capture some tasks or projects")
+      $todo_txt.save!
+    else
+      exit_now!("#{$todo_txt.file} already exists—not overwriting")
+    end
+  end
+end
+
 desc "List tasks"
 arg :search_string, :optional
 command :ls do |c|
-  c.desc "Show only tasks in the given context"
-  c.flag [:context,:"@"]
-
-  c.desc "Show only tasks for the given project"
-  c.flag [:project,:"+"]
-
   c.desc "Show only completed tasks"
   c.switch [:completed,:done]
 
   c.action do |global,options,args|
-    $todo_list.search(context: options[:context],
-                      project: options[:project],
-                      completed: options[:completed],
-                      match: args[0]
-                     ) do |task|
-      puts Gtd::Formatters::Task.new(task).to_s
+    tasks = if options[:done]
+              $todo_txt.tasks.select(&:completed?)
+            else
+              $todo_txt.tasks.reject(&:completed?)
+            end
+    formatter = Gtd::TaskFormatter.new
+    tasks.each do |task|
+      puts formatter.format(task)
     end
   end
 end
 
 desc "Add a new task"
-arg_name "task description"
+long_desc %{
+  Adds a new task to the main task list.  You can either provide the text of the command, along with the necessary @context and +project demarcations, or you can promote a task from a project's task list using -p
+
+  -p will take the next action of that project and put it into the main task list.
+}
+arg_name "[task description]"
 command [:new] do |c|
+
+  c.desc "Add the next action from «project_id»"
+  c.arg_name "project_id"
+  c.flag ["from-project","p"]
+
   c.action do |global,options,args|
-    task_name  = args.join(" ")
-    $todo_list.add_task(task_name)
-    $todo_list.save!
+    if options["from-project"]
+      project = $projects.find(options["from-project"].to_i)
+      next_action = project.todo_txt.tasks.first
+      $todo_txt.tasks << next_action
+      project.todo_txt.remove(next_action)
+      project.todo_txt.save!
+    else
+      $todo_txt.tasks << Gtd::Task.new(description: args.join(" "))
+    end
+    $todo_txt.save!
   end
 end
 
@@ -55,7 +81,7 @@ desc "Edit the task list directly in your configured $EDITOR"
 command [:edit,:vi] do |c|
   c.action do |global,options,args|
     editor = ENV["EDITOR"]
-    system("#{editor} '#{$todo_list.file}'")
+    system("#{editor} '#{$todo_txt.file}'")
   end
 end
 
@@ -63,118 +89,41 @@ desc "Mark a task complete"
 arg :task_id
 command [:done,:complete] do |c|
   c.action do |global,options,args|
-    result = Gtd::TaskCompleter.new($todo_list,$projects).complete_task(args[0].to_i)
-    puts result.to_s unless result.to_s.strip == ""
+    $todo_txt.complete_task(args[0].to_i)
+    $todo_txt.save!
   end
 end
 
-desc "Manage Projects"
-command [:projects,:p] do |c|
-  c.desc "List active projects"
-  c.command :ls do |ls|
-
-    ls.desc "Show next action on each project"
-    ls.switch "next-actions", default_value: true
-
-    ls.action do |global,options,args|
-      $projects.each do |project|
-        if options["next-actions"]
-          puts Gtd::Formatters::ProjectSummary.new(project).to_s
-        else
-          puts Gtd::Formatters::ProjectCompactSummary.new(project).to_s
-        end
-      end
-    end
-  end
-
-  c.desc "Archive a project"
+desc "Projects"
+command [:p, :projects] do |c|
+  c.desc "List tasks"
   c.arg :project_id
-  c.command :archive do |archive|
-    archive.action do |global,options,args|
-      $projects.archive(args[0])
-    end
-  end
-
-  c.desc "New Project"
-  c.arg_name "project_name"
-  c.command :new do |n|
-    n.action do |global,options,args|
-      exit_now!("You must provide a name") if args.empty?
-      name = args.join(" ")
-      $projects.new(name)
-    end
-  end
-
-  c.desc "Show Project info"
-  c.arg :project_id
-  c.command :show do |show|
-    show.action do |global,options,args|
-      puts Gtd::Formatters::ProjectDetails.new($projects.find(args[0])).to_s
-    end
-  end
-
-  c.desc "Edit Project info directly"
-  c.arg :project_id
-  c.command :vi do |show|
-    show.action do |global,options,args|
-      editor = ENV["EDITOR"]
-      project = $projects.find(args[0])
-      system("#{editor} '#{project.dir}'")
-    end
-  end
-
-  c.desc "Manage Project tasks"
   c.command :tasks do |tasks|
-    tasks.desc "List Project tasks"
-    tasks.arg :project_id
-    tasks.command :ls do |ls|
-      ls.action do |global,options,args|
-        $projects.find(args[0]).tasks.each do |task|
-          puts Gtd::Formatters::Task.new(task, show_id: false).to_s
-        end
+    tasks.action do |global,options,args|
+      project = $projects.find(args[0].to_i)
+      formatter = Gtd::TaskFormatter.new
+      project.todo_txt.tasks.each do |task|
+        puts formatter.format(task)
       end
     end
-
-    tasks.desc "Add a new task for this project"
-    tasks.arg_name "project_id new_task_name"
-    tasks.command :new do |add|
-      add.action do |global,options,args|
-        project_id = args[0]
-        task_name  = args[1..-1].join(" ")
-        project = $projects.find(project_id)
-        project.add_task(task_name)
-        project.save!
-      end
-    end
-
-    tasks.default_command :ls
   end
 
-  c.desc "Manage Project links"
-  c.command :links do |links|
-    links.desc "Add a new link for this project"
-    links.arg_name "project_id link"
-    links.command :new do |add|
-      add.action do |global,options,args|
-        project_id = args[0]
-        project = $projects.find(project_id)
-        args[1..-1].each do |link|
-          project.links << link
-        end
-        project.save!
+  c.desc "List projects"
+  c.command :ls do |ls|
+    ls.action do |global,options,args|
+      formatter = Gtd::ProjectFormatter.new
+      $projects.each do |project|
+        puts formatter.format(project)
       end
     end
-
-    links.default_command :ls
   end
-
   c.default_command :ls
 end
 
 pre do |global,command,options,args|
   Rainbow.enabled = global[:color]
-  $todo_list = Gtd::TodoTxt.new(Pathname(global[:root]) / "todo.txt")
-  $projects = Gtd::Projects.new($todo_list,Pathname(global[:root]) / "projects")
+  $todo_txt = Gtd::TodoTxt.new(Pathname(global[:root]) / "todo.txt")
+  $projects = Gtd::Projects.new(Pathname(global[:root]) / "projects")
   true
 end
 
