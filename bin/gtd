@@ -74,10 +74,10 @@ command [:new] do |c|
     if options["from-project"]
       project = $projects.find(options["from-project"].to_i)
       next_action = project.todo_txt.tasks.first
-      puts "Adding: #{next_action.description}, #{next_action.project_codes.inspect}"
       $todo_txt.tasks << next_action
       project.todo_txt.remove(next_action)
       project.todo_txt.save!
+      puts "Added: #{next_action.description}"
     else
       $todo_txt.tasks << Gtd::Task.new(description: args.join(" "))
     end
@@ -131,6 +131,15 @@ command [:p, :projects] do |c|
   c.command :archive do |archive|
     archive.action do |global,options,args|
       $projects.archive(args[0].to_i)
+    end
+  end
+
+  c.desc "Edit project directory with your EDITOR"
+  c.arg :project_id
+  c.command [:vi,:edit] do |edit|
+    edit.action do |global_options,options,args|
+      editor = ENV["EDITOR"]
+      system("#{editor} '#{$projects.dir_for(args[0].to_i)}'")
     end
   end
   c.default_command :ls

@@ -35,6 +35,7 @@ RSpec.describe "project management" do
     stdout = gtd "p"
     expect(stdout).not_to have_printed("__archive__")
   end
+
   it "can list a project's tasks" do
     FileUtils.mkdir test_gtd_path / "projects"
     FileUtils.mkdir test_gtd_path / "projects" / "bar"
@@ -84,4 +85,15 @@ RSpec.describe "project management" do
     expect(stdout).to have_printed("This is another task")
 
   end
+
+  it "can edit the project directory" do
+    FileUtils.mkdir test_gtd_path / "projects"
+    FileUtils.mkdir test_gtd_path / "projects" / "bar"
+
+    ENV["EDITOR"] = "echo"
+    stdout = gtd "p vi 1"
+
+    expect(stdout).to have_printed("#{test_gtd_path / "projects" / "bar"}")
+  end
+
 end

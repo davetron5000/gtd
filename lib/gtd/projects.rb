@@ -32,6 +32,11 @@ module Gtd
       FileUtils.mv project_dir, @root / "__archive__"
     end
 
+    def dir_for(id)
+      project = find(id)
+      @root / project.code
+    end
+
   private
 
     def project_parser

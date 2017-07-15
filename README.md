@@ -11,16 +11,22 @@ links, documents, and notes.  All of this is stored as plaintext.
 gem install gtd
 ```
 
-**TODO** make a setup step
-
 ## Use Cases
+
+### Create a todo list
+
+```
+> gtd init
+```
 
 ### Interact with a todo list
 
 ```
-> gtd ls # lists tasks in main todo list
+> gtd ls             # lists tasks in main todo list
 > gtd done «task id» # complete a task
-> gtd vi # edit the todo list file directly
+> gtd vi             # edit the todo list file directly
+> gtd new This is a new task # create a new task
+> gtd new -p 2       # Add the next action from project #2 to the todo list
 ```
 
 ### Projects
