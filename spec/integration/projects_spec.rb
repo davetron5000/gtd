@@ -47,6 +47,22 @@ RSpec.describe "project management" do
     expect(stdout).to have_printed("This is a task")
     expect(stdout).to have_printed("This is another task")
   end
+
+  it "can archive a project" do
+    FileUtils.mkdir test_gtd_path / "projects"
+    FileUtils.mkdir test_gtd_path / "projects" / "bar"
+    File.open(test_gtd_path / "projects" / "bar" / "tasks.txt","w") do |file|
+      file.puts "This is a task"
+      file.puts "This is another task"
+    end
+
+    gtd "p archive 1"
+
+    stdout = gtd "p"
+    expect(stdout).not_to have_printed("bar")
+    expect(Dir.exist?(test_gtd_path / "projects" / "__archive__" / "bar")).to eq(true)
+  end
+
   it "can move a project's next action to the main task list" do
     FileUtils.mkdir test_gtd_path / "projects"
     FileUtils.mkdir test_gtd_path / "projects" / "bar"
@@ -61,6 +77,7 @@ RSpec.describe "project management" do
     stdout = gtd "ls"
 
     expect(stdout).to have_printed("This is a task")
+    expect(stdout).to have_printed("+bar")
 
     stdout = gtd "p tasks 1"
     expect(stdout).not_to have_printed("This is a task")

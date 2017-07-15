@@ -1,5 +1,11 @@
 require 'simplecov'
+ENV["GTD_ENV"] ||= "test"
+if ENV["GTD_ENV"] != "test"
+  raise "Can't run tests in environment #{ENV["GTD_ENV"]}"
+end
+SimpleCov.command_name "RSpec unit tests"
 SimpleCov.start do
+  command_name "Unit Tests"
   add_filter "/spec/"
 end
 

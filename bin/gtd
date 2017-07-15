@@ -1,4 +1,11 @@
 #!/usr/bin/env ruby
+if ENV['GTD_ENV'] == 'test'
+  require 'simplecov'
+  SimpleCov.start do
+    command_name "#{$$} Integration Tests"
+    add_filter "/spec/"
+  end
+end
 require "gli"
 require "gtd"
 require "pathname"
@@ -67,6 +74,7 @@ command [:new] do |c|
     if options["from-project"]
       project = $projects.find(options["from-project"].to_i)
       next_action = project.todo_txt.tasks.first
+      puts "Adding: #{next_action.description}, #{next_action.project_codes.inspect}"
       $todo_txt.tasks << next_action
       project.todo_txt.remove(next_action)
       project.todo_txt.save!
@@ -115,6 +123,14 @@ command [:p, :projects] do |c|
       $projects.each do |project|
         puts formatter.format(project)
       end
+    end
+  end
+
+  c.desc "Archive projects"
+  c.arg :project_id
+  c.command :archive do |archive|
+    archive.action do |global,options,args|
+      $projects.archive(args[0].to_i)
     end
   end
   c.default_command :ls

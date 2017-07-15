@@ -5,15 +5,12 @@ module Gtd
   class TodoTxt
     attr_reader :file, :tasks
 
-    def initialize(file)
+    def initialize(file, add_project_code: nil)
       @file = file
+      task_parser = Gtd::TaskParser.new(add_project_code: add_project_code)
       @tasks = (File.read(@file).split(/\n/) rescue []).each_with_index.map { |task_line,index|
         task_parser.parse(task_line,index)
       }
-    end
-
-    def task_parser
-      @task_parser ||= Gtd::TaskParser.new
     end
 
     def complete_task(task_id)
@@ -25,13 +22,10 @@ module Gtd
     end
 
     def save!
+      task_parser = Gtd::TaskParser.new
       File.open(@file,"w") do |file|
         @tasks.each do |task|
-          if task.completed_on.nil?
-            file.puts task.description
-          else
-            file.puts "x #{task.completed_on.to_s} #{task.description}"
-          end
+          file.puts task_parser.serialize(task)
         end
       end
     end

@@ -25,6 +25,10 @@ RSpec.describe Gtd::TaskFormatter do
       task = Gtd::Task.new(description: "this is a task", completed_on: Date.parse("2015-02-03"), id: 4, contexts: [ "foo", "bar" ])
       expect(task_formatter.format(task)).to match(/@bar @foo/)
     end
+    it "includes the project codes" do
+      task = Gtd::Task.new(description: "this is a task", completed_on: Date.parse("2015-02-03"), id: 4, project_codes: [ "foo", "bar" ])
+      expect(task_formatter.format(task)).to match(/\+bar \+foo/)
+    end
     it "includes the completion date for completed tasks" do
       task = Gtd::Task.new(description: "this is a task", completed_on: Date.parse("2015-02-03"), id: 4)
       expect(task_formatter.format(task)).to match(/completed: 2015-02-03/)

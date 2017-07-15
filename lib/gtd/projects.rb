@@ -1,16 +1,16 @@
 require "pathname"
-require_relative "project"
+require_relative "project_parser"
 
 module Gtd
   class Projects
     def initialize(root)
       @root = Pathname(root)
-      @projects = Dir[@root / "*"].select { |dir|
+      @projects = Dir[@root / "*"].sort.select { |dir|
         File.directory?(dir)
       }.reject { |dir|
         [".","..","__archive__"].include?(Pathname(dir).basename.to_s)
       }.each_with_index.map { |dir,index|
-        Gtd::Project.new(dir: dir, id: index + 1)
+        project_parser.parse(dir,index)
       }
     end
 
@@ -24,9 +24,18 @@ module Gtd
       @projects.detect { |project| project.id == id }
     end
 
-    def project_dirs
-      @projects.map(&:dir)
+    def archive(id)
+      project = find(id)
+      project_dir = @root / project.code
+
+      FileUtils.mkdir_p @root / "__archive__"
+      FileUtils.mv project_dir, @root / "__archive__"
     end
 
+  private
+
+    def project_parser
+      @project_parser ||= Gtd::ProjectParser.new
+    end
   end
 end
