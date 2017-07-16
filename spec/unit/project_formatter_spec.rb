@@ -34,7 +34,7 @@ RSpec.describe Gtd::ProjectFormatter do
   describe "#format" do
     it "includes the id" do
       project = Gtd::Project.new(name: "foo", id: 1, todo_txt: todo_txt, code: "foo")
-      expect(project_formatter.format(project)).to match(/^\[1\] /)
+      expect(project_formatter.format(project)).to match(/^\[\s*1\] /)
     end
     it "includes the name" do
       project = Gtd::Project.new(name: "foo", id: 1, todo_txt: todo_txt, code: "foo")

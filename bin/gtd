@@ -74,6 +74,7 @@ command [:new] do |c|
     if options["from-project"]
       project = $projects.find(options["from-project"].to_i)
       next_action = project.todo_txt.tasks.first
+      raise "#{project.code} has no next action" if next_action.nil?
       $todo_txt.tasks << next_action
       project.todo_txt.remove(next_action)
       project.todo_txt.save!
@@ -118,8 +119,13 @@ command [:p, :projects] do |c|
 
   c.desc "List projects"
   c.command :ls do |ls|
+
+    ls.desc "List projects details in more depth"
+    ls.switch [:long,:l]
+
     ls.action do |global,options,args|
-      formatter = Gtd::ProjectFormatter.new
+      long = options[:long] || options[GLI::Command::PARENT][:long]
+      formatter = long ? Gtd::ProjectFormatter.new : Gtd::CompactProjectFormatter.new
       $projects.each do |project|
         puts formatter.format(project)
       end
@@ -142,6 +148,58 @@ command [:p, :projects] do |c|
       system("#{editor} '#{$projects.dir_for(args[0].to_i)}'")
     end
   end
+
+  c.desc "Audit projects against task list"
+  c.long_desc "This can show you if there are next actions on projects that aren't in your todo list"
+  c.command [:audit] do |audit|
+    audit.action do |global_options,options,args|
+      projects = []
+      $projects.each do |project|
+        projects << project
+      end
+
+      project_codes_in_task_list = $todo_txt.tasks.map { |task|
+        task.project_codes
+      }.flatten.uniq
+
+      projects_with_next_actions = projects.select { |project|
+        if project.todo_txt.tasks.any?
+          true
+        elsif project_codes_in_task_list.include?(project.code)
+          true
+        else
+          false
+        end
+      }
+
+      project_codes_with_next_actions = projects_with_next_actions.map(&:code)
+
+      missing_projects = project_codes_with_next_actions - project_codes_in_task_list
+      extra_projects   = project_codes_in_task_list - project_codes_with_next_actions
+
+      if missing_projects.any?
+        puts "Projects with next actions not on your todo list:\n".color(:yellow).underline
+        missing_projects.each do |code|
+          puts "* #{code}".color(:white)
+        end
+      end
+      if extra_projects.any?
+        puts "\n" if missing_projects.any?
+        puts "Projects on your todo list that aren't in the projects folder:\n".color(:cyan).underline
+        extra_projects.each do |code|
+          puts "* #{code}".color(:white)
+        end
+        puts "\n"
+      end
+      if missing_projects.empty? && extra_projects.empty?
+        puts "Every project's next action is on your todo list".color(:green)
+      end
+    end
+  end
+
+  c.desc "List project details in more depth"
+  c.switch [:long,:l]
+
   c.default_command :ls
 end
 

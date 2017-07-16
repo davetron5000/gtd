@@ -96,4 +96,28 @@ RSpec.describe "project management" do
     expect(stdout).to have_printed("#{test_gtd_path / "projects" / "bar"}")
   end
 
+  it "can audit the main todo list for tasks from every project" do
+    FileUtils.mkdir test_gtd_path / "projects"
+    FileUtils.mkdir test_gtd_path / "projects" / "bar"
+    File.open(test_gtd_path / "projects" / "bar" / "tasks.txt","w") do |file|
+      file.puts "This is a task"
+      file.puts "This is another task"
+    end
+    FileUtils.mkdir test_gtd_path / "projects" / "baz"
+    FileUtils.mkdir test_gtd_path / "projects" / "foo"
+    File.open(test_gtd_path / "projects" / "foo" / "tasks.txt","w") do |file|
+      file.puts "This is a foo task"
+      file.puts "This is another foo task"
+    end
+
+    gtd "init"
+    gtd "new -p 3"
+
+    stdout = gtd "p audit"
+
+    expect(stdout).to have_printed("bar")
+    expect(stdout).not_to have_printed("baz")
+    expect(stdout).not_to have_printed("foo")
+  end
+
 end

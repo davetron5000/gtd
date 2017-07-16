@@ -15,7 +15,7 @@ RSpec.describe Gtd::TaskFormatter do
   describe "#format" do
     it "includes the id" do
       task = Gtd::Task.new(description: "this is a task", completed_on: Date.parse("2015-02-03"), id: 4)
-      expect(task_formatter.format(task)).to match(/^\[4\] /)
+      expect(task_formatter.format(task)).to match(/^\[\s*4\] /)
     end
     it "includes the description" do
       task = Gtd::Task.new(description: "this is a task", completed_on: Date.parse("2015-02-03"), id: 4)
