@@ -158,7 +158,7 @@ command [:p, :projects] do |c|
         projects << project
       end
 
-      project_codes_in_task_list = $todo_txt.tasks.map { |task|
+      project_codes_in_task_list = $todo_txt.tasks.reject(&:completed?).map { |task|
         task.project_codes
       }.flatten.uniq
 
