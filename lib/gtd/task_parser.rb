@@ -2,8 +2,9 @@ require_relative "task"
 
 module Gtd
   class TaskParser
-    def initialize(add_project_code: nil)
+    def initialize(add_project_code: nil, add_context: nil)
       @add_project_code = add_project_code
+      @add_context      = add_context
     end
 
     def parse(line,line_number)
@@ -17,6 +18,7 @@ module Gtd
       contexts      , description = parse_tagged_code(description,/^@/)
       project_codes , description = parse_tagged_code(description,/^\+/)
 
+      contexts      << @add_context      unless @add_context.nil?
       project_codes << @add_project_code unless @add_project_code.nil?
 
       Task.new(description: description, project_codes: project_codes.uniq, contexts: contexts, completed_on: completed_on, id: id)

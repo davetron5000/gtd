@@ -39,16 +39,26 @@ command :init do |c|
 end
 
 desc "List tasks"
-arg :search_string, :optional
 command :ls do |c|
   c.desc "Show only completed tasks"
   c.switch [:completed,:done]
+
+  c.desc "Show only tasks with the given context"
+  c.arg_name "context"
+  c.flag [:'@',:context]
 
   c.action do |global,options,args|
     tasks = if options[:done]
               $todo_txt.tasks.select(&:completed?)
             else
               $todo_txt.tasks.reject(&:completed?)
+            end
+    tasks = if options[:context]
+              tasks.select { |task|
+                task.contexts.include?(options[:context])
+              }
+            else
+              tasks
             end
     formatter = Gtd::TaskFormatter.new
     tasks.each do |task|

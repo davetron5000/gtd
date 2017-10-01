@@ -33,15 +33,19 @@ RSpec.describe Gtd::ProjectFormatter do
 
   describe "#format" do
     it "includes the id" do
-      project = Gtd::Project.new(name: "foo", id: 1, todo_txt: todo_txt, code: "foo")
+      project = Gtd::Project.new(name: "foo-project", id: 1, todo_txt: todo_txt, code: "foo")
       expect(project_formatter.format(project)).to match(/^\[\s*1\] /)
     end
+    it "includes the default contexst" do
+      project = Gtd::Project.new(name: "foo-project", id: 1, todo_txt: todo_txt, code: "foo", default_context: "blah")
+      expect(project_formatter.format(project)).to match(/@blah/)
+    end
     it "includes the name" do
-      project = Gtd::Project.new(name: "foo", id: 1, todo_txt: todo_txt, code: "foo")
+      project = Gtd::Project.new(name: "foo-project", id: 1, todo_txt: todo_txt, code: "foo")
       expect(project_formatter.format(project)).to match(/foo/)
     end
     it "includes the tasks" do
-      project = Gtd::Project.new(name: "foo", id: 1, todo_txt: todo_txt, code: "foo")
+      project = Gtd::Project.new(name: "foo-project", id: 1, todo_txt: todo_txt, code: "foo")
       expect(project_formatter.format(project)).to match(/Tasks/)
       expect(project_formatter.format(project)).to match(/This is a task/)
       expect(project_formatter.format(project)).to match(/This is another task/)
@@ -49,11 +53,11 @@ RSpec.describe Gtd::ProjectFormatter do
     context "when there are no tasks" do
       let(:tasks) { [] }
       it "excludes the tasks header when there are no tasks" do
-        project = Gtd::Project.new(name: "foo", id: 1, todo_txt: todo_txt, code: "foo")
+        project = Gtd::Project.new(name: "foo-project", id: 1, todo_txt: todo_txt, code: "foo")
         expect(project_formatter.format(project)).not_to match(/Tasks/)
       end
       it "gives a suggestion to archive the project" do
-        project = Gtd::Project.new(name: "foo", id: 1, todo_txt: todo_txt, code: "foo")
+        project = Gtd::Project.new(name: "foo-project", id: 1, todo_txt: todo_txt, code: "foo")
         expect(project_formatter.format(project)).to match(/no next actions/i)
         expect(project_formatter.format(project)).to match(/archive/i)
       end

@@ -72,6 +72,10 @@ RSpec.describe "project management" do
       file.puts "This is another task"
     end
 
+    File.open(test_gtd_path / "projects" / "bar" / "context.txt","w") do |file|
+      file.puts "work"
+    end
+
     gtd "init"
     gtd "new -p 1"
 
@@ -79,6 +83,7 @@ RSpec.describe "project management" do
 
     expect(stdout).to have_printed("This is a task")
     expect(stdout).to have_printed("+bar")
+    expect(stdout).to have_printed("@work")
 
     stdout = gtd "p tasks 1"
     expect(stdout).not_to have_printed("This is a task")

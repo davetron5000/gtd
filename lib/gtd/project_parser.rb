@@ -8,10 +8,12 @@ module Gtd
       dir      = Pathname(project_dir)
       name     = parse_name(dir)
       code     = dir.basename.to_s
-      todo_txt = Gtd::TodoTxt.new(dir / "tasks.txt", add_project_code: code)
+      default_context = parse_context(dir)
+      todo_txt = Gtd::TodoTxt.new(dir / "tasks.txt", add_project_code: code, add_context: default_context)
       Gtd::Project.new(name: name,
                        code: code,
                        todo_txt: todo_txt,
+                       default_context: default_context,
                        id: index + 1)
     end
 
@@ -22,6 +24,14 @@ module Gtd
         File.read(dir / "name.txt").chomp.strip
       else
         dir.basename.to_s
+      end
+    end
+
+    def parse_context(dir)
+      if File.exists?(dir / "context.txt")
+        File.read(dir / "context.txt").chomp.strip
+      else
+        nil
       end
     end
   end

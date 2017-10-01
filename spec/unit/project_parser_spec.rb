@@ -47,5 +47,15 @@ RSpec.describe Gtd::ProjectParser do
       expect(project.todo_txt.tasks.map(&:description)).to include("This is a task")
       expect(project.todo_txt.tasks.map(&:description)).to include("This is another task")
     end
+
+    it "parses the task list from tasks.txt given each the default context" do
+      File.open(project_dir / "context.txt","w") do |file|
+        file.puts "foo"
+      end
+      project = project_parser.parse(project_dir,2)
+      expect(project.todo_txt.tasks.size).to eq(2)
+      expect(project.todo_txt.tasks[0].contexts).to include("foo")
+      expect(project.todo_txt.tasks[1].contexts).to include("foo")
+    end
   end
 end

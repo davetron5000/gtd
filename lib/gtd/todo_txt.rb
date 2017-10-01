@@ -5,9 +5,9 @@ module Gtd
   class TodoTxt
     attr_reader :file, :tasks
 
-    def initialize(file, add_project_code: nil)
+    def initialize(file, add_project_code: nil, add_context: nil)
       @file = file
-      task_parser = Gtd::TaskParser.new(add_project_code: add_project_code)
+      task_parser = Gtd::TaskParser.new(add_project_code: add_project_code, add_context: add_context)
       @tasks = (File.read(@file).split(/\n/) rescue []).each_with_index.map { |task_line,index|
         task_parser.parse(task_line,index)
       }

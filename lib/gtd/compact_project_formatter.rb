@@ -7,7 +7,11 @@ module Gtd
       if Rainbow.enabled
         id_padding *= 4
       end
-      sprintf("[%#{id_padding}s] %s +%s\n",project.id.to_s.color(:white),project.name.color(:green),project.code.color(:yellow))
+      context = project.default_context.nil? ? "" : " @#{project.default_context}"
+      sprintf("[%#{id_padding}s] %s +%s%s\n",project.id.to_s.color(:white),
+                                           project.name.color(:green),
+                                           project.code.color(:yellow),
+                                           context.color(:cyan))
     end
   end
 end
